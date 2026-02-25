@@ -1,0 +1,8 @@
+spring:
+  application:
+    name: x_ray.app
+  data:
+    mongodb:
+      uri: ${MONGODB_URI}
+      database: bitBuilderdb
+      auto-index-creation: true
