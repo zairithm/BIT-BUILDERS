@@ -6,3 +6,6 @@ spring:
       uri: ${MONGODB_URI}
       database: bitBuilderdb
       auto-index-creation: true
+jwt:
+  secret: ${JWT_SECRET}
+  expiration: 86400000

@@ -6,6 +6,6 @@ import org.springframework.data.mongodb.repository.MongoRepository;
 
 import java.util.Optional;
 
-public interface DocotorRepository extends MongoRepository<Doctor, ObjectId> {
+public interface DoctorRepository extends MongoRepository<Doctor, ObjectId> {
     Optional<Doctor> findByUserId(String userId);
 }

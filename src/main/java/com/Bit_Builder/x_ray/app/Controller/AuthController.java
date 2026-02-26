@@ -1,0 +1,46 @@
+package com.Bit_Builder.x_ray.app.Controller;
+
+import com.Bit_Builder.x_ray.app.Dto.LoginRequest;
+import com.Bit_Builder.x_ray.app.Dto.LoginResponse;
+import com.Bit_Builder.x_ray.app.Dto.RegisterRequest;
+import com.Bit_Builder.x_ray.app.Services.AuthService;
+import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+@RestController
+@RequestMapping("/auth")
+@Slf4j
+public class AuthController {
+
+    @Autowired
+    private AuthService authService;
+
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@RequestBody RegisterRequest request){
+        try{
+            authService.register(request);
+            return new ResponseEntity<>(HttpStatus.OK);
+        } catch (Exception e) {
+            log.error("can't save user", e);
+            return new ResponseEntity<>("failed to create user", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @PostMapping("/log-in")
+    public ResponseEntity<LoginResponse> login(@RequestBody LoginRequest request){
+        try{
+            LoginResponse response = authService.logIn(request);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        }catch (Exception e){
+            log.error("failed to log in", e);
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
+}

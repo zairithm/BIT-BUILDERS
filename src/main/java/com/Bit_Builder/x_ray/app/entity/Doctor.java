@@ -15,9 +15,10 @@ public class Doctor {
     @Id
     private ObjectId id;
 
-    private String userid;
-
+    private String userId;
+    private String specialization;
     private String licenceNumber;
     private String hospitalName;
     private int experience;
+    private String phone;
 }
