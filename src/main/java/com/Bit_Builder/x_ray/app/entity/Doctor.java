@@ -13,7 +13,7 @@ import org.springframework.data.mongodb.core.mapping.Document;
 @AllArgsConstructor
 public class Doctor {
     @Id
-    private ObjectId id;
+    private String id;
 
     private String userId;
     private String specialization;

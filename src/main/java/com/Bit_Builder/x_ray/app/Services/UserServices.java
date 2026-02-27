@@ -1,0 +1,55 @@
+package com.Bit_Builder.x_ray.app.Services;
+
+import com.Bit_Builder.x_ray.app.Dto.UserProfileResponse;
+import com.Bit_Builder.x_ray.app.Repository.DoctorRepository;
+import com.Bit_Builder.x_ray.app.Repository.PatientRepository;
+import com.Bit_Builder.x_ray.app.Repository.UserRepository;
+import com.Bit_Builder.x_ray.app.entity.Doctor;
+import com.Bit_Builder.x_ray.app.entity.Patient;
+import com.Bit_Builder.x_ray.app.entity.User;
+import com.Bit_Builder.x_ray.app.enums.Role;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
+@Service
+public class UserServices {
+    @Autowired
+    private UserRepository userRepository;
+
+    @Autowired
+    private PatientRepository patientRepository;
+
+    @Autowired
+    private DoctorRepository doctorRepository;
+
+    public UserProfileResponse getMyProfile(String email) {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not foud!"));
+
+        UserProfileResponse profile = new UserProfileResponse();
+        if (user.getRole().equals(Role.PATIENT)) {
+            Patient patient = patientRepository.findByUserId(user.getId())
+                    .orElseThrow(() -> new RuntimeException("Patient not foud!"));
+            profile.setFullName(user.getFullName());
+            profile.setEmail(user.getEmail());
+            profile.setRole(user.getRole().name());
+            profile.setAge(patient.getAge());
+            profile.setGender(patient.getGender().name());
+            profile.setBloodGroup(patient.getBloodGroup());
+            profile.setDoctorId(patient.getDoctorId());
+
+        }else if(user.getRole().equals(Role.DOCTOR)){
+            Doctor doctor = doctorRepository.findByUserId(user.getId())
+                    .orElseThrow(() -> new RuntimeException("Doctor not foud!"));
+
+            profile.setFullName(user.getFullName());
+            profile.setEmail(user.getEmail());
+            profile.setRole(user.getRole().name());
+            profile.setHospitalName(doctor.getHospitalName());
+            profile.setLicenceNumber(doctor.getLicenceNumber());
+            profile.setExperience(doctor.getExperience());
+            profile.setSpecialization(doctor.getSpecialization());
+        }
+        return profile;
+    }
+}

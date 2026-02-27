@@ -11,7 +11,7 @@ import java.time.LocalDateTime;
 @Document(collection = "xray_report")
 public class XRayReport {
     @Id
-    private ObjectId id;
+    private String id;
 
     private ObjectId patientId;
     private ObjectId doctorId;

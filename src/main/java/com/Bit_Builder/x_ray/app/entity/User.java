@@ -19,7 +19,7 @@ import java.util.Date;
 @NoArgsConstructor
 public class User {
     @Id
-    private ObjectId id;
+    private String id;
 
     @NonNull
     private String FullName;

@@ -52,7 +52,7 @@ public class AuthService {
             // Step 2 - save Doctor or Patient based on role
             if (request.getRole() == Role.DOCTOR) {
                 Doctor doctor = new Doctor();
-                doctor.setUserId(savedUser.getId().toHexString());
+                doctor.setUserId(savedUser.getId());
                 doctor.setSpecialization(request.getSpecialization());
                 doctor.setLicenceNumber(request.getLicenceNumber());
                 doctor.setHospitalName(request.getHospitalName());
@@ -62,7 +62,7 @@ public class AuthService {
 
             } else if (request.getRole() == Role.PATIENT) {
                 Patient patient = new Patient();
-                patient.setUserId(savedUser.getId().toHexString());
+                patient.setUserId(savedUser.getId());
                 patient.setAge(request.getAge());
                 patient.setGender(request.getGender());
                 patient.setDob(request.getDob());
