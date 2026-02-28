@@ -9,3 +9,6 @@ spring:
 jwt:
   secret: ${JWT_SECRET}
   expiration: 86400000
+springdoc:
+  swagger-ui:
+    path: /

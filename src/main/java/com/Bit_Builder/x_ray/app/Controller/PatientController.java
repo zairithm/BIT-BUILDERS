@@ -2,6 +2,8 @@ package com.Bit_Builder.x_ray.app.Controller;
 
 import com.Bit_Builder.x_ray.app.Services.PateintServices;
 import com.Bit_Builder.x_ray.app.entity.Doctor;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -15,12 +17,14 @@ import java.util.List;
 @RestController
 @RequestMapping("/patient")
 @Slf4j
+@Tag(name = "Patient", description = "Patient APIs")
 public class PatientController {
 
     @Autowired
     private PateintServices pateintServices;
 
     @GetMapping("/get-all-doctor")
+    @Operation(summary = "Get All Doctors", description = "Returns list of all registered doctors. Patient can choose from this list.")
     public ResponseEntity<List<Doctor>> getAllDoctors(){
         try {
             List<Doctor> responseList = pateintServices.getAllDoctors();
@@ -32,6 +36,7 @@ public class PatientController {
     }
 
     @PostMapping("/select-doctor/{doctorId}")
+    @Operation(summary = "Select Doctor", description = "Patient selects a doctor. Only allowed if patient has no doctor assigned yet.")
     public ResponseEntity<String> selectDoctor(@PathVariable String doctorId){
         try{
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
@@ -46,6 +51,7 @@ public class PatientController {
     }
 
     @DeleteMapping("/remove-doctor")
+    @Operation(summary = "Remove Doctor", description = "Patient removes their currently assigned doctor.")
     public ResponseEntity<String> removeDoctor(){
         try{
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();

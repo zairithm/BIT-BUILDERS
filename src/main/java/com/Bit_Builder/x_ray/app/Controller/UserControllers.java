@@ -2,6 +2,8 @@ package com.Bit_Builder.x_ray.app.Controller;
 
 import com.Bit_Builder.x_ray.app.Dto.UserProfileResponse;
 import com.Bit_Builder.x_ray.app.Services.UserServices;
+import io.swagger.v3.oas.annotations.Operation;
+import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -15,11 +17,13 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 @RequestMapping("/user")
 @Slf4j
+@Tag(name = "User", description = "Common user APIs")
 public class UserControllers {
     @Autowired
     private UserServices userServices;
 
     @GetMapping("/my-profile")
+    @Operation(summary = "Get My Profile", description = "Returns profile of logged in user. Works for both Doctor and Patient roles.")
     public ResponseEntity<UserProfileResponse> getMyProfile(){
         try{
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();

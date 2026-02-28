@@ -34,7 +34,13 @@ public class SecurityConfig {
                 .authorizeHttpRequests(request -> request
                         .requestMatchers("/auth/**").permitAll()       // register & login public
                         .requestMatchers("/doctor/**").hasRole("DOCTOR")  // only doctors
-                        .requestMatchers("/patient/**").hasRole("PATIENT") // only patients
+                        .requestMatchers("/patient/**").hasRole("PATIENT")
+                        .requestMatchers(
+                                "/",
+                                "/swagger-ui/**",
+                                "/swagger-ui.html",
+                                "/v3/api-docs/**"
+                        ).permitAll()// only patients
                         .anyRequest().authenticated()
                 )
                 .csrf(AbstractHttpConfigurer::disable)
