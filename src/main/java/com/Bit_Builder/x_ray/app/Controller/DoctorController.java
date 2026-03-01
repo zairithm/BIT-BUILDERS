@@ -1,9 +1,11 @@
 package com.Bit_Builder.x_ray.app.Controller;
 
 import com.Bit_Builder.x_ray.app.Dto.ReportResponse;
+import com.Bit_Builder.x_ray.app.Dto.UpdateReportRequest;
 import com.Bit_Builder.x_ray.app.Dto.UserProfileResponse;
 import com.Bit_Builder.x_ray.app.Services.DoctorService;
 import com.Bit_Builder.x_ray.app.entity.Patient;
+import com.Bit_Builder.x_ray.app.entity.XRayReport;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.extern.slf4j.Slf4j;
@@ -12,10 +14,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -62,6 +62,34 @@ public class DoctorController {
         } catch (Exception e) {
             log.error("failed to fetch report", e);
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @Operation(summary = "Upload X-Ray for Patient", description = "Doctor uploads X-Ray for a specific patient.")
+    @PostMapping("/{patientId}/upload-patient-xray")
+    public ResponseEntity<String> uploadXray(@PathVariable String patientId,
+                                             @RequestParam MultipartFile file){
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String email = auth.getName();
+            String response = doctorService.uploadXRayForPatient(patientId, file, email);
+            return new ResponseEntity<>(response, HttpStatus.CREATED);
+        } catch (Exception e) {
+            log.error("failed to upload xray", e);
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @Operation(summary = "Update Report", description = "Doctor adds notes, diagnosis and updates status.")
+    @PutMapping("/update-report/{reportId}")
+    public ResponseEntity<String> updateReport(@PathVariable String reportId,
+                                               @RequestBody UpdateReportRequest request){
+        try{
+            String response = doctorService.addNotes(reportId, request);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            log.error("can't change", e);
+            throw new RuntimeException(e.getMessage());
         }
     }
 }

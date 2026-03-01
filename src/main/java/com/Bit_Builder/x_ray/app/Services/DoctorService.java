@@ -1,18 +1,20 @@
 package com.Bit_Builder.x_ray.app.Services;
 
+import com.Bit_Builder.x_ray.app.Dto.UpdateReportRequest;
 import com.Bit_Builder.x_ray.app.Dto.ReportResponse;
 import com.Bit_Builder.x_ray.app.Dto.UserProfileResponse;
 import com.Bit_Builder.x_ray.app.Repository.DoctorRepository;
 import com.Bit_Builder.x_ray.app.Repository.PatientRepository;
 import com.Bit_Builder.x_ray.app.Repository.UserRepository;
 import com.Bit_Builder.x_ray.app.Repository.XRayReportRepository;
-import com.Bit_Builder.x_ray.app.entity.Doctor;
-import com.Bit_Builder.x_ray.app.entity.Patient;
-import com.Bit_Builder.x_ray.app.entity.User;
-import com.Bit_Builder.x_ray.app.entity.XRayReport;
+import com.Bit_Builder.x_ray.app.entity.*;
+import com.Bit_Builder.x_ray.app.enums.Severity;
+import com.Bit_Builder.x_ray.app.enums.Status;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -29,6 +31,9 @@ public class DoctorService {
 
     @Autowired
     private XRayReportRepository xRayReportRepository;
+
+    @Autowired
+    private AiService aiService;
 
     //get all my patients
     public List<Patient> getAllMyPatients(String email){
@@ -111,5 +116,67 @@ public class DoctorService {
         response.setBloodGroup(patient.getBloodGroup());
 
         return response;
+    }
+
+    //upload patients x-ray
+    public String uploadXRayForPatient(String patientId, MultipartFile file, String email){
+        //verify doctorexist
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("can't find user"));
+        Doctor doctor = doctorRepository.findByUserId(user.getId())
+                .orElseThrow(()-> new RuntimeException("can't find doctor"));
+
+        //get patient
+        Patient patient = patientRepository.findById(patientId)
+                .orElseThrow(() -> new RuntimeException("paient not found"));
+
+        if (xRayReportRepository.findByPatientId(patientId).isPresent()) {
+            throw new RuntimeException("Report already exists for this patient! Delete it first.");
+        }
+
+        //call ai
+        AiResult aiResult = aiService.analyzeXray(file);
+
+        Severity severity = Severity.valueOf(
+                aiService.determineSeverity(aiResult.getMaxConfidence())
+        );
+
+        // create report
+        XRayReport report = new XRayReport();
+        report.setPatientId(patientId);
+        report.setDoctorId(doctor.getId());
+        report.setAiResult(aiResult);
+        report.setSeverity(severity);
+        report.setStatus(Status.ANALYZED);
+        report.setUploadedAt(LocalDateTime.now());
+
+        xRayReportRepository.save(report);
+        return "X-Ray uploaded and analyzed successfully!";
+    }
+
+    public String addNotes(String reportId, UpdateReportRequest request) {
+
+        XRayReport report = xRayReportRepository.findById(reportId)
+                .orElseThrow(() -> new RuntimeException("Report not found"));
+
+        // update notes
+        if (request.getDoctorNotes() != null) {
+            report.setDoctorNotes(request.getDoctorNotes());
+        }
+
+        // update diagnosis
+        if (request.getDiagnosis() != null) {
+            report.setDiagnosis(request.getDiagnosis());
+        }
+
+        // update status if provided otherwise auto set REVIEWED
+        if (request.getStatus() != null) {
+            report.setStatus(request.getStatus());
+        } else {
+            report.setStatus(Status.REVIEWED);
+        }
+
+        xRayReportRepository.save(report);
+        return "Report updated successfully!";
     }
 }
