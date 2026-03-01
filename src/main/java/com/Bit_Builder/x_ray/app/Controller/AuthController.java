@@ -30,10 +30,10 @@ public class AuthController {
     public ResponseEntity<?> register(@RequestBody RegisterRequest request){
         try{
             authService.register(request);
-            return new ResponseEntity<>(HttpStatus.OK);
+            return new ResponseEntity<>(HttpStatus.CREATED);
         } catch (Exception e) {
             log.error("can't save user", e);
-            return new ResponseEntity<>("failed to create user", HttpStatus.BAD_REQUEST);
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
 

@@ -17,7 +17,7 @@ public class SwaggerConfig {
                 .info(new Info()
                         .title("X-Ray App API")
                         .version("1.0")
-                        .description("Bit Builders Hackathon — X-Ray Analysis Backend"))
+                        .description("Bit Builders Hackathon — X-Ray Analysis Backend By - Baba_Bangali- (Sahil Chaturvedi)"))
                 .addSecurityItem(new SecurityRequirement()
                         .addList("Bearer Authentication"))
                 .components(new Components()

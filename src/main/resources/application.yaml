@@ -6,6 +6,11 @@ spring:
       uri: ${MONGODB_URI}
       database: bitBuilderdb
       auto-index-creation: true
+  servlet:
+    multipart:
+          enabled: true
+          max-file-size: 20MB
+          max-request-size: 25MB
 jwt:
   secret: ${JWT_SECRET}
   expiration: 86400000

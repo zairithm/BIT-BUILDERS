@@ -1,9 +1,11 @@
 package com.Bit_Builder.x_ray.app.Controller;
 
+import com.Bit_Builder.x_ray.app.Dto.ReportResponse;
 import com.Bit_Builder.x_ray.app.Services.PateintServices;
 import com.Bit_Builder.x_ray.app.entity.Doctor;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
+import jakarta.websocket.server.PathParam;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -11,6 +13,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
 
 import java.util.List;
 
@@ -64,4 +67,35 @@ public class PatientController {
             return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
         }
     }
+
+    //Upload x-ray
+    @Operation(summary = "Upload X-Ray", description = "Patient uploads X-Ray for AI analysis. Only one report allowed per patient.")
+    @PostMapping("/upload-xray")
+    public ResponseEntity<String> uploadXray(@RequestParam("file") MultipartFile file){
+        try{
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String email = auth.getName();
+            String response = pateintServices.uploadXray(file, email);
+            return  new ResponseEntity<>(response, HttpStatus.CREATED);
+        }catch (Exception e){
+            log.error("can't upload file", e);
+            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    //get report
+    @Operation(summary = "Get My Report", description = "Patient views their own X-Ray report.")
+    @GetMapping("/my-report")
+    public ResponseEntity<ReportResponse> getMyReport() {
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String email = auth.getName();
+            ReportResponse response = pateintServices.getMyReport(email);
+            return new ResponseEntity<>(response, HttpStatus.OK);
+        } catch (Exception e) {
+            log.error("failed to fetch report", e);
+            return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
+
 }
