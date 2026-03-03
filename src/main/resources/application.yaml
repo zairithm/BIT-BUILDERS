@@ -17,3 +17,6 @@ jwt:
 springdoc:
   swagger-ui:
     path: /
+
+ai:
+  url: https://impuissant-electrochemically-brande.ngrok-free.dev/predict

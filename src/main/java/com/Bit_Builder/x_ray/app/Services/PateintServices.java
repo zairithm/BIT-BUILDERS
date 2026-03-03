@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
 import javax.print.Doc;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -81,7 +82,7 @@ public class PateintServices {
     }
 
     //patient uploads his x-ray
-    public String uploadXray(MultipartFile file, String email){
+    public String uploadXray(MultipartFile file, String email) throws IOException {
         //get patient by user id
         User user = userRepository.findByEmail(email)
                 .orElseThrow(()-> new RuntimeException("user not found!"));
@@ -95,10 +96,10 @@ public class PateintServices {
         AiResult aiResult = aiService.analyzeXray(file);
 
        //determine seviearity
-        Severity severity = Severity.valueOf(
-                aiService.determineSeverity(aiResult.getMaxConfidence())
-        );
 
+        Severity severity = Severity.valueOf(
+                aiService.determineSeverity(aiResult.getPriority())
+        );
         //create report
         XRayReport report = new XRayReport();
         report.setPatientId(patient.getId());
@@ -142,7 +143,6 @@ public class PateintServices {
                 );
             });
         }
-
         return response;
     }
 }

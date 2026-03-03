@@ -68,7 +68,7 @@ public class DoctorController {
     @Operation(summary = "Upload X-Ray for Patient", description = "Doctor uploads X-Ray for a specific patient.")
     @PostMapping("/{patientId}/upload-patient-xray")
     public ResponseEntity<String> uploadXray(@PathVariable String patientId,
-                                             @RequestParam MultipartFile file){
+                                             @RequestParam("file") MultipartFile file){
         try {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             String email = auth.getName();
@@ -89,7 +89,7 @@ public class DoctorController {
             return new ResponseEntity<>(response, HttpStatus.OK);
         } catch (Exception e) {
             log.error("can't change", e);
-            throw new RuntimeException(e.getMessage());
+            return  new ResponseEntity<>("can't update Report", HttpStatus.BAD_REQUEST);
         }
     }
 }

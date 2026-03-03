@@ -14,8 +14,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Service
@@ -49,25 +51,21 @@ public class DoctorService {
         // sort by severity
         List<Patient> sorted = patients.stream()
                 .sorted((p1, p2) -> {
-                    int s1 = getSeverityOrder(p1.getId());
-                    int s2 = getSeverityOrder(p2.getId());
-                    return Integer.compare(s1, s2);
-                })
-                .collect(Collectors.toList());
+                    double t1 = getTriageScore(p1.getId());
+                    double t2 = getTriageScore(p2.getId());
+                    return Double.compare(t2, t1); // higher triage score first
+                }).toList();
 
         return sorted;
     }
 
     // helper — gives severity a number for sorting
-    private int getSeverityOrder(String patientId) {
-        return xRayReportRepository.findByPatientId(patientId)
-                .map(report -> switch (report.getSeverity()) {
-                    case SEVERE -> 1;
-                    case MODERATE -> 2;
-                    case MILD -> 3;
-                    case NORMAL -> 4;
-                })
-                .orElse(5); // no report yet → show last
+    private double getTriageScore(String patientId) {
+        Optional<XRayReport> reports = xRayReportRepository.findByPatientId(patientId);
+        if (reports.isEmpty()) return -999;
+        AiResult aiResult = reports.get().getAiResult();
+        if (aiResult == null) return -999;
+        return aiResult.getTriage_score();
     }
 
     //get patient
@@ -119,7 +117,7 @@ public class DoctorService {
     }
 
     //upload patients x-ray
-    public String uploadXRayForPatient(String patientId, MultipartFile file, String email){
+    public String uploadXRayForPatient(String patientId, MultipartFile file, String email) throws IOException {
         //verify doctorexist
         User user = userRepository.findByEmail(email)
                 .orElseThrow(() -> new RuntimeException("can't find user"));
@@ -138,7 +136,7 @@ public class DoctorService {
         AiResult aiResult = aiService.analyzeXray(file);
 
         Severity severity = Severity.valueOf(
-                aiService.determineSeverity(aiResult.getMaxConfidence())
+                aiService.determineSeverity(aiResult.getPriority())
         );
 
         // create report

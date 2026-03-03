@@ -11,12 +11,12 @@ import java.util.Map;
 @AllArgsConstructor
 @NoArgsConstructor
 public class AiResult {
-    private List<String> detectedDiseases;        // ["Pneumonia", "Effusion"]
-    private Map<String, Double> probabilities;     // {"Pneumonia": 0.82, ...}
-    private double maxConfidence;                  // 0.82
-    private boolean uncertaintyFlag;              // false
-    private String warning;                        // null or some warning
-    private String gradcamImage;                   // "gradcam_output.jpg"
-    private String voiceReport;                    // "voice_abc123.mp3"
-    private String clinicianNote;                  // "The AI model detected..."
+    private Map<String, Double> probabilities;        // ["Pneumonia", "Effusion"]
+    private double max_probability;
+    private double confidence_score;
+    private String confidence_level;
+    private double triage_score;
+    private String priority;
+    private String clinician_note;
+    private String heatmap;
 }
