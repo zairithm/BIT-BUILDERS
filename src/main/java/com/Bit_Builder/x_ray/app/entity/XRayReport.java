@@ -30,4 +30,6 @@ public class XRayReport {
     private String doctorNotes;
     private String diagnosis;
     private LocalDateTime uploadedAt;
+
+    private String transactionHash; // blockchain tx hash
 }

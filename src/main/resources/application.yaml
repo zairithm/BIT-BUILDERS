@@ -20,3 +20,8 @@ springdoc:
 
 ai:
   url: https://impuissant-electrochemically-brande.ngrok-free.dev/predict
+
+blockchain:
+  rpc-url: https://rpc-amoy.polygon.technology
+  private-key: 0x3e115957920795443451bb4337d150f0d7c49a55c9265db59132c7b52684764b
+  contract-address: 0xf1aC91da59d8926401188Eb21F43e3614BDE4Ef2

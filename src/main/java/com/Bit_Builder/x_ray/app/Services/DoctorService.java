@@ -37,6 +37,9 @@ public class DoctorService {
     @Autowired
     private AiService aiService;
 
+    @Autowired
+    private  BlockchainService blockchainService;
+
     //get all my patients
     public List<Patient> getAllMyPatients(String email){
         User user = userRepository.findByEmail(email)
@@ -148,6 +151,14 @@ public class DoctorService {
         report.setStatus(Status.ANALYZED);
         report.setUploadedAt(LocalDateTime.now());
 
+        xRayReportRepository.save(report);
+
+        // call blockchain
+        String txHash = blockchainService.logReportToBlockchain(
+                report.getId(), aiResult);
+        report.setTransactionHash(txHash);
+
+        // save again with transaction hash
         xRayReportRepository.save(report);
         return "X-Ray uploaded and analyzed successfully!";
     }

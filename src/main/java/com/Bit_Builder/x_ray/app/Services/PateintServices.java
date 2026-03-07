@@ -36,6 +36,9 @@ public class PateintServices {
     @Autowired
     private AiService aiService;
 
+    @Autowired
+    private BlockchainService blockchainService;
+
     //getting all doctors for patient
     public List<Doctor> getAllDoctors(){
         List<Doctor> res = doctorRepository.findAll();
@@ -108,6 +111,14 @@ public class PateintServices {
         report.setSeverity(severity);
         report.setStatus(Status.ANALYZED);
 
+        xRayReportRepository.save(report);
+
+        // call blockchain with report ID
+        String txHash = blockchainService.logReportToBlockchain(
+                report.getId(), aiResult);
+        report.setTransactionHash(txHash);
+
+        // save again with transaction hash
         xRayReportRepository.save(report);
 
         return "X-Ray uploaded and analyzed by Rayzo!";

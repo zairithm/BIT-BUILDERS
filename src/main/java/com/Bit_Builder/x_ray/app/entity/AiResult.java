@@ -18,5 +18,14 @@ public class AiResult {
     private double triage_score;
     private String priority;
     private String clinician_note;
-    private String heatmap;
+    private VisualAnalysis visual_analysis;
+
+    @Data
+    @AllArgsConstructor
+    @NoArgsConstructor
+    public static class VisualAnalysis {
+        private String gradcam;
+        private String lung_segmentation;
+        private String rib_edges;
+    }
 }
