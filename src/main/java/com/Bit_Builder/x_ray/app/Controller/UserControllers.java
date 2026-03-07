@@ -10,9 +10,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
 
 @RestController
 @RequestMapping("/user")
@@ -24,8 +25,8 @@ public class UserControllers {
 
     @GetMapping("/my-profile")
     @Operation(summary = "Get My Profile", description = "Returns profile of logged in user. Works for both Doctor and Patient roles.")
-    public ResponseEntity<UserProfileResponse> getMyProfile(){
-        try{
+    public ResponseEntity<UserProfileResponse> getMyProfile() {
+        try {
             Authentication auth = SecurityContextHolder.getContext().getAuthentication();
             String email = auth.getName();
 
@@ -34,6 +35,19 @@ public class UserControllers {
         } catch (Exception e) {
             log.error("error occured fething your profile");
             return new ResponseEntity<>(HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    @PostMapping("/upload-pfp")
+    @Operation(summary = "user can upload his x-ray", description = "Uploads profile picture of user in base64")
+    public ResponseEntity<String> uploadPfp(@RequestParam("file") MultipartFile file) throws IOException {
+        try {
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String res = userServices.uploadProfilePicture(authentication.getName(), file);
+            return new ResponseEntity<>(res, HttpStatus.OK);
+        } catch (IOException e) {
+            log.error(e.getMessage(), "can't uplode pfp!");
+            return new ResponseEntity<>("can't upload", HttpStatus.BAD_REQUEST);
         }
     }
 }

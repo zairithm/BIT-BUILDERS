@@ -12,6 +12,7 @@ public class UserProfileResponse {
     private String fullName;
     private String email;
     private String role;
+    private String profilePicture;
 
     // doctor specific fields (null if patient)
     private String specialization;

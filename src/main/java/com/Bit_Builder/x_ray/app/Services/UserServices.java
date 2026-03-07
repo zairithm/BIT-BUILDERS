@@ -10,6 +10,10 @@ import com.Bit_Builder.x_ray.app.entity.User;
 import com.Bit_Builder.x_ray.app.enums.Role;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import java.io.IOException;
+import java.util.Base64;
 
 @Service
 public class UserServices {
@@ -51,5 +55,16 @@ public class UserServices {
             profile.setSpecialization(doctor.getSpecialization());
         }
         return profile;
+    }
+
+    public String uploadProfilePicture(String email, MultipartFile file)throws IOException {
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User Not found"));
+
+        String base64 = Base64.getEncoder().encodeToString(file.getBytes());
+        user.setProfilePicture(base64);
+        userRepository.save(user);
+
+        return "pfp uploaded!";
     }
 }
