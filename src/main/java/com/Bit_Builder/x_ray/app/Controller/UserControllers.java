@@ -51,5 +51,16 @@ public class UserControllers {
         }
     }
 
-    
+    @DeleteMapping("/delete-pfp")
+    @Operation(summary = "Delete pfp", description = "Deletes User Profile picture")
+    public ResponseEntity<String> deletePfp(){
+        try {
+            Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+            String res = userServices.deletePfp(auth.getName());
+            return new ResponseEntity<>(res, HttpStatus.OK);
+        } catch (Exception e) {
+            log.error(e.getMessage(), "can't upload pfp!");
+            return new ResponseEntity<>("can't delete you! :(", HttpStatus.BAD_GATEWAY);
+        }
+    }
 }

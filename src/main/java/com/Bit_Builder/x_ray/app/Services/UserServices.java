@@ -68,4 +68,13 @@ public class UserServices {
         return "pfp uploaded!";
     }
 
+    public String deletePfp(String email){
+        User user = userRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("User not found"));
+
+        user.setProfilePicture(null);
+        userRepository.save(user);
+
+        return "pfp deleted!";
+    }
 }
