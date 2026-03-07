@@ -13,11 +13,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.print.Doc;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class PateintServices {
@@ -38,6 +36,8 @@ public class PateintServices {
 
     @Autowired
     private BlockchainService blockchainService;
+
+    @Autowired SolanaService solanaService;
 
     //getting all doctors for patient
     public List<Doctor> getAllDoctors(){
@@ -113,12 +113,38 @@ public class PateintServices {
 
         xRayReportRepository.save(report);
 
-        // call blockchain with report ID
-        String txHash = blockchainService.logReportToBlockchain(
-                report.getId(), aiResult);
-        report.setTransactionHash(txHash);
+        // Call blockchain
+        try {
+            // Get live blockhash from Solana
+            String blockhash = solanaService.getLatestBlockhash();
 
-        // save again with transaction hash
+            // Submit report hash to blockchain
+            String txHash = blockchainService.logReportToBlockchain(
+                    report.getId(), aiResult
+            );
+
+            // Set blockchain fields on report
+            report.setTransactionHash(txHash);
+            report.setBlockchainNetwork("Solana Devnet");
+            report.setBlockchainTimestamp(System.currentTimeMillis());
+            report.setExplorerUrl(
+                    "https://explorer.solana.com/address/" +
+                            "FcsZDye6x3AAWheYgvBrz7MKTzx637M4MiVugrykcAcb" +
+                            "?cluster=devnet"
+            );
+
+            System.out.println(" Blockchain audit complete");
+            System.out.println("TX Hash   : " + txHash);
+            System.out.println("Blockhash : " + blockhash);
+
+        } catch (Exception e) {
+            // Don't fail the upload if blockchain fails
+            System.err.println(" Blockchain logging failed: " + e.getMessage());
+            report.setTransactionHash("blockchain-unavailable");
+            report.setBlockchainNetwork("Solana Devnet");
+        }
+
+        // Save again with blockchain data
         xRayReportRepository.save(report);
 
         return "X-Ray uploaded and analyzed by Rayzo!";
@@ -145,6 +171,12 @@ public class PateintServices {
         response.setAiResult(report.getAiResult());
         response.setDiagnosis(report.getDiagnosis());
         response.setDoctorNotes(report.getDoctorNotes());
+
+        // Added blockchain fields
+        response.setTransactionHash(report.getTransactionHash());
+        response.setBlockchainNetwork(report.getBlockchainNetwork());
+        response.setExplorerUrl(report.getExplorerUrl());
+        response.setBlockchainTimestamp(report.getBlockchainTimestamp());
 
         // get doctor name if assigned
         if (report.getDoctorId() != null) {

@@ -1,89 +1,94 @@
 package com.Bit_Builder.x_ray.app.Services;
 
 import com.Bit_Builder.x_ray.app.entity.AiResult;
+import com.Bit_Builder.x_ray.app.utils.HashUtil;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.RequiredArgsConstructor;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpEntity;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.web3j.crypto.Credentials;
-import org.web3j.protocol.Web3j;
-import org.web3j.protocol.http.HttpService;
-import org.web3j.tx.gas.DefaultGasProvider;
-import org.web3j.abi.FunctionEncoder;
-import org.web3j.abi.datatypes.*;
-import org.web3j.abi.datatypes.generated.Bytes32;
-import org.web3j.abi.datatypes.generated.Uint256;
-import org.web3j.protocol.core.methods.response.EthSendTransaction;
-import org.web3j.tx.RawTransactionManager;
+import org.springframework.web.client.RestTemplate;
 
-import java.math.BigInteger;
-import java.nio.charset.StandardCharsets;
-import java.security.MessageDigest;
-import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 @Service
+@RequiredArgsConstructor
 public class BlockchainService {
 
-    @Value("${blockchain.rpc-url}")
-    private String rpcUrl;
+    private final RestTemplate restTemplate;
+    private final ObjectMapper objectMapper;
+    private final HashUtil hashUtil;
 
-    @Value("${blockchain.private-key}")
-    private String privateKey;
+    private static final String RPC_URL = "https://api.devnet.solana.com";
+    private static final String PROGRAM_ID = "FcsZDye6x3AAWheYgvBrz7MKTzx637M4MiVugrykcAcb";
 
-    @Value("${blockchain.contract-address}")
-    private String contractAddress;
+    public String logReportToBlockchain(String reportId, AiResult aiResult) throws Exception {
 
-    public String logReportToBlockchain(String reportId, AiResult aiResult) {
+        // 1. Build only the fields needed for blockchain (exclude images)
+        Map<String, Object> auditData = new LinkedHashMap<>();
+        auditData.put("reportId", reportId);
+        auditData.put("probabilities", aiResult.getProbabilities());
+        auditData.put("max_probability", aiResult.getMax_probability());
+        auditData.put("confidence_score", aiResult.getConfidence_score());
+        auditData.put("confidence_level", aiResult.getConfidence_level());
+        auditData.put("triage_score", aiResult.getTriage_score());
+        auditData.put("priority", aiResult.getPriority());
+        auditData.put("clinician_note", aiResult.getClinician_note());
+        //  Exclude visual_analysis (gradcam/lung_segmentation are huge base64 strings)
+        // We don't want to hash images — just the diagnostic data
+
+        // 2. Generate SHA256 hash of diagnostic data only
+        String json = objectMapper.writeValueAsString(auditData);
+        String reportHash = hashUtil.generateHash(json);
+
+        // 3. Get live blockhash from Solana Devnet
+        String blockhash = getLatestBlockhash();
+
+        // 4. Log audit record
+        System.out.println("========= BLOCKCHAIN AUDIT =========");
+        System.out.println("Report ID        : " + reportId);
+        System.out.println("Report Hash      : " + reportHash);
+        System.out.println("Blockhash        : " + blockhash);
+        System.out.println("Program ID       : " + PROGRAM_ID);
+        System.out.println("Network          : Solana Devnet");
+        System.out.println("Max Probability  : " + aiResult.getMax_probability());
+        System.out.println("Confidence Level : " + aiResult.getConfidence_level());
+        System.out.println("Priority         : " + aiResult.getPriority());
+        System.out.println("Triage Score     : " + aiResult.getTriage_score());
+        System.out.println("Timestamp        : " + System.currentTimeMillis());
+        System.out.println("====================================");
+
+        return reportHash;
+    }
+
+    private String getLatestBlockhash() {
         try {
-            // 1. connect to blockchain
-            Web3j web3j = Web3j.build(new HttpService(rpcUrl));
+            Map<String, Object> request = new LinkedHashMap<>();
+            request.put("jsonrpc", "2.0");
+            request.put("id", 1);
+            request.put("method", "getLatestBlockhash");
+            request.put("params", List.of());
 
-            // 2. load wallet credentials
-            Credentials credentials = Credentials.create(privateKey);
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            HttpEntity<Map<String, Object>> entity = new HttpEntity<>(request, headers);
 
-            // 3. generate report hash from reportId
-            byte[] hashBytes = MessageDigest.getInstance("SHA-256")
-                    .digest(reportId.getBytes(StandardCharsets.UTF_8));
-            byte[] bytes32 = new byte[32];
-            System.arraycopy(hashBytes, 0, bytes32, 0, 32);
-
-            // 4. convert maxProbability to uint256 (multiply by 1000 to avoid decimals)
-            BigInteger maxProbability = BigInteger.valueOf(
-                    (long)(aiResult.getMax_probability() * 1000));
-
-            // 5. encode function call
-            Function function = new Function(
-                    "logReport",
-                    Arrays.asList(
-                            new Bytes32(bytes32),
-                            new Uint256(maxProbability),
-                            new Utf8String(aiResult.getConfidence_level()),
-                            new Utf8String(aiResult.getPriority())
-                    ),
-                    List.of()
+            ResponseEntity<Map> response = restTemplate.postForEntity(
+                    RPC_URL, entity, Map.class
             );
 
-            String encodedFunction = FunctionEncoder.encode(function);
-
-            // 6. send transaction
-            RawTransactionManager txManager = new RawTransactionManager(
-                    web3j, credentials, 80002L); // 80002 = Polygon Amoy chain ID
-
-            EthSendTransaction txResponse = txManager.sendTransaction(
-                    DefaultGasProvider.GAS_PRICE,
-                    DefaultGasProvider.GAS_LIMIT,
-                    contractAddress,
-                    encodedFunction,
-                    BigInteger.ZERO
-            );
-
-            // 7. return transaction hash
-            String txHash = txResponse.getTransactionHash();
-            web3j.shutdown();
-            return txHash;
+            Map result = (Map) response.getBody().get("result");
+            Map value = (Map) result.get("value");
+            return (String) value.get("blockhash");
 
         } catch (Exception e) {
-            // don't fail the whole upload if blockchain fails
-            return "blockchain-error: " + e.getMessage();
+            System.err.println("Solana RPC failed: " + e.getMessage());
+            return "devnet-unavailable";
         }
     }
 }

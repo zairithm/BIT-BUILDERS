@@ -32,4 +32,8 @@ public class XRayReport {
     private LocalDateTime uploadedAt;
 
     private String transactionHash; // blockchain tx hash
+    private String blockchainNetwork;
+    private String explorerUrl;
+    private Long blockchainTimestamp;
+
 }

@@ -29,4 +29,10 @@ public class ReportResponse {
     private String patientName;     // instead of raw patientId
     private String patientAge;
     private String bloodGroup;
+
+    //blockchain feilds
+    private String transactionHash;
+    private String blockchainNetwork;
+    private String explorerUrl;
+    private Long blockchainTimestamp;
 }

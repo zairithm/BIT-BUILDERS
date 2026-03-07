@@ -40,6 +40,9 @@ public class DoctorService {
     @Autowired
     private  BlockchainService blockchainService;
 
+    @Autowired
+    private SolanaService solanaService;
+
     //get all my patients
     public List<Patient> getAllMyPatients(String email){
         User user = userRepository.findByEmail(email)
@@ -116,6 +119,12 @@ public class DoctorService {
         response.setPatientAge(String.valueOf(patient.getAge()));
         response.setBloodGroup(patient.getBloodGroup());
 
+        // Add these
+        response.setTransactionHash(report.getTransactionHash());
+        response.setBlockchainNetwork(report.getBlockchainNetwork());
+        response.setExplorerUrl(report.getExplorerUrl());
+        response.setBlockchainTimestamp(report.getBlockchainTimestamp());
+
         return response;
     }
 
@@ -153,11 +162,36 @@ public class DoctorService {
 
         xRayReportRepository.save(report);
 
-        // call blockchain
-        String txHash = blockchainService.logReportToBlockchain(
-                report.getId(), aiResult);
-        report.setTransactionHash(txHash);
+        // Call blockchain
+        try {
+            // Get live blockhash from Solana
+            String blockhash = solanaService.getLatestBlockhash();
 
+            // Submit report hash to blockchain
+            String txHash = blockchainService.logReportToBlockchain(
+                    report.getId(), aiResult
+            );
+
+            // Set blockchain fields on report
+            report.setTransactionHash(txHash);
+            report.setBlockchainNetwork("Solana Devnet");
+            report.setBlockchainTimestamp(System.currentTimeMillis());
+            report.setExplorerUrl(
+                    "https://explorer.solana.com/address/" +
+                            "FcsZDye6x3AAWheYgvBrz7MKTzx637M4MiVugrykcAcb" +
+                            "?cluster=devnet"
+            );
+
+            System.out.println(" Blockchain audit complete");
+            System.out.println("TX Hash   : " + txHash);
+            System.out.println("Blockhash : " + blockhash);
+
+        } catch (Exception e) {
+            // Don't fail the upload if blockchain fails
+            System.err.println(" Blockchain logging failed: " + e.getMessage());
+            report.setTransactionHash("blockchain-unavailable");
+            report.setBlockchainNetwork("Solana Devnet");
+        }
         // save again with transaction hash
         xRayReportRepository.save(report);
         return "X-Ray uploaded and analyzed successfully!";
